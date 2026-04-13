@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
 namespace ApiProject
 {
     public class Program
@@ -19,8 +18,8 @@ namespace ApiProject
 
             // Add services to the container.
             builder.Services.AddControllers();
-            builder.Services.AddOpenApi();
-
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
             // 1. Configure the Database (SQL Server)
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             {
@@ -36,7 +35,7 @@ namespace ApiProject
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequiredLength = 6;
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
             // 3. Configure JWT Authentication
             builder.Services.AddAuthentication(options =>
@@ -58,7 +57,16 @@ namespace ApiProject
                     )
                 };
             });
-
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("mycors",
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
+            });
             // 4. Register Repositories and Services (Dependency Injection)
             // Dependency Injection (DI) is like a waiter that brings you what you need without you having to go to the kitchen yourself.
             builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
@@ -68,13 +76,26 @@ namespace ApiProject
             builder.Services.AddScoped<ICartRepository, CartRepository>();
             builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
             builder.Services.AddScoped<ITokenService, TokenService>();
-
+            builder.Services.AddTransient<EmailService>();
             var app = builder.Build();
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                var roles = new[] { "Admin", "User", "Seller" };
+                foreach (var role in roles)
+                {
+                    if (!roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
+                    {
+                        roleManager.CreateAsync(new IdentityRole(role)).GetAwaiter().GetResult();
+                    }
+                }
+            }
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwagger();
+                app.UseSwaggerUI();
             }
 
             app.UseHttpsRedirection();
@@ -82,7 +103,8 @@ namespace ApiProject
             // Authentication must come before Authorization!
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseCors("mycors");
+            app.UseStaticFiles();
             app.MapControllers();
 
             app.Run();

@@ -13,8 +13,7 @@ namespace ApiProject.Models
         [StringLength(250)]
         public string Address { get; set; } = string.Empty;
 
-        [Required]
-        public string UserRole { get; set; } = "User";
+        
 
         public bool IsDeleted { get; set; } = false;
     }

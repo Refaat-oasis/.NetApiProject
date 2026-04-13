@@ -13,20 +13,27 @@ namespace ApiProject.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly EmailService _emailService;
 
-        // Dependency Injection in the constructor. 
-        // We are asking .NET to give us the UserManager, TokenService, and SignInManager.
-        public AccountController(UserManager<ApplicationUser> userManager, ITokenService tokenService, SignInManager<ApplicationUser> signInManager)
+       
+        public AccountController(UserManager<ApplicationUser> userManager, ITokenService tokenService, SignInManager<ApplicationUser> signInManager, EmailService emailService)
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _signInManager = signInManager;
+            _emailService = emailService;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            var allowedClientRoles = new[] { "User", "Seller" };
+            var requestedClientRole = (registerDto.Role ?? "User").Trim();
+            if (!allowedClientRoles.Contains(requestedClientRole))
+            {
+                return BadRequest("Invalid role requested.");
+            }
 
             var user = new ApplicationUser
             {
@@ -34,16 +41,25 @@ namespace ApiProject.Controllers
                 Email = registerDto.Email,
                 FullName = registerDto.FullName,
                 Address = registerDto.Address,
-                UserRole = "User"
             };
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
 
             if (result.Succeeded)
             {
+                var identityRole = requestedClientRole == "Seller" ? "Seller" : "User";
+
+                var roleAddResult = await _userManager.AddToRoleAsync(user, identityRole);
+                if (!roleAddResult.Succeeded)
+                {
+                    await _userManager.DeleteAsync(user);
+                    return BadRequest(roleAddResult.Errors);
+                }
+                var token = await _tokenService.CreateToken(user);
+
                 return Ok(new
                 {
-                    Token = _tokenService.CreateToken(user),
+                    Token = token,
                     Email = user.Email,
                     FullName = user.FullName
                 });
@@ -72,9 +88,59 @@ namespace ApiProject.Controllers
                 FullName = user.FullName
             });
         }
+
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+                return Ok();
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var link = $"http://localhost:4200/reset-password?email={model.Email}&token={Uri.EscapeDataString(token)}";
+
+            var body = $"<p>Click here to reset your password:</p><a href='{link}'>Reset Password</a>";
+
+            await _emailService.SendEmailAsync(model.Email, "Reset Password", body);
+
+            return Ok();
+        }
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+                return BadRequest();
+            var decodedToken = Uri.UnescapeDataString(model.Token);
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok();
+        }
     }
 
     // DTOs (Data Transfer Objects) are simple classes used to pass data between the client and the server.
+    public class ForgotPasswordDto
+    {
+        public string Email { get; set; }
+    }
+    public class ResetPasswordDto
+    {
+        public string Email { get; set; }
+
+        public string Token { get; set; }
+
+        public string NewPassword { get; set; }
+
+        public string ConfirmPassword { get; set; }
+    }
     public class RegisterDto
     {
         [Required]
@@ -85,6 +151,8 @@ namespace ApiProject.Controllers
         public string Password { get; set; } = string.Empty;
         [Required]
         public string Address { get; set; } = string.Empty;
+        public string? Role { get; set; } = "Customer";
+
     }
 
     public class LoginDto

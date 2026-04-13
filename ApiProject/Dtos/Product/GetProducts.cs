@@ -1,9 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace ApiProject.Models
+namespace ApiProject.Dtos.Product
 {
-    public class Product
+    public class GetProducts
     {
         public int Id { get; set; }
 
@@ -25,12 +24,6 @@ namespace ApiProject.Models
         [Required]
         public int CategoryId { get; set; }
 
-        public bool IsDeleted { get; set; } = false;
-
-        // Navigation properties
-        [ForeignKey("CategoryId")]
-        public Category? Category { get; set; }
         public string Image { get; set; }
-        public ICollection<Review>? Reviews { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 using ApiProject.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -9,23 +10,26 @@ namespace ApiProject.Services
 {
     public interface ITokenService
     {
-        string CreateToken(ApplicationUser user);
+        Task<string> CreateToken(ApplicationUser user);
     }
 
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
         private readonly SymmetricSecurityKey _key;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         // Dependency Injection to get configuration (like the secret key)
-        public TokenService(IConfiguration config)
+        public TokenService(IConfiguration config , UserManager<ApplicationUser> userManager)
         {
             _config = config;
+            _userManager = userManager;
             var secretKey = _config["JWT:Key"] ?? throw new ArgumentNullException("JWT Key is missing");
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+
         }
 
-        public string CreateToken(ApplicationUser user)
+        public async Task<string> CreateToken(ApplicationUser user)
         {
             // Claims are information about the user that we put in the token
             var claims = new List<Claim>
@@ -33,9 +37,12 @@ namespace ApiProject.Services
                 new Claim(JwtRegisteredClaimNames.NameId, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? ""),
-                new Claim("role", user.UserRole)
             };
-
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
             // Credentials for signing the token
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
 
