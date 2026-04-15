@@ -27,6 +27,8 @@ namespace ApiProject.Models
 
         public bool IsDeleted { get; set; } = false;
 
+        public string ImageUrl { get; set; } = string.Empty;
+
         // Navigation properties
         [ForeignKey("CategoryId")]
         public Category? Category { get; set; }
