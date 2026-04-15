@@ -58,7 +58,10 @@ namespace ApiProject.Controllers
 
             }
 
-            return BadRequest(result.Errors);
+           return Ok(new
+ {
+     message = "User registered successfully"
+ });
         }
 
         [HttpPost("login")]
