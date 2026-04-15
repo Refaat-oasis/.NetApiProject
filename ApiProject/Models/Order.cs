@@ -19,6 +19,20 @@ namespace ApiProject.Models
         [Required]
         public string Status { get; set; } = "Pending";
 
+        [Required]
+        [StringLength(50)]
+        public string PaymentMethod { get; set; } = "CashOnDelivery";
+
+        [Required]
+        [StringLength(500)]
+        public string ShippingAddress { get; set; } = string.Empty;
+
+        [StringLength(200)]
+        public string? GuestEmail { get; set; }
+
+        [StringLength(100)]
+        public string? GuestName { get; set; }
+
         // Navigation properties
         [ForeignKey("UserId")]
         public ApplicationUser? User { get; set; }

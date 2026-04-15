@@ -20,6 +20,17 @@ namespace ApiProject
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // Configure CORS for Angular frontend
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngular", policy =>
+                    policy.WithOrigins("http://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod());
+            });
+
+
             // 1. Configure the Database (SQL Server)
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             {
@@ -99,7 +110,7 @@ namespace ApiProject
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseCors("AllowAngular");
 
             // Authentication must come before Authorization!
             app.UseCors("mycors");
