@@ -1,6 +1,7 @@
 using ApiProject.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace ApiProject.Data
 {
@@ -43,6 +44,22 @@ namespace ApiProject.Data
             builder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
+
+            builder.Entity<Product>()
+    .HasOne(p => p.Category)
+    .WithMany(c => c.Products)
+    .HasForeignKey(p => p.CategoryId);
+
+            builder.Entity<Product>()
+    .HasOne(p => p.Seller)
+    .WithMany()
+    .HasForeignKey(p => p.SellerId)
+    .OnDelete(DeleteBehavior.NoAction);
+
+
+            builder.Entity<Review>()
+.HasIndex(r => new { r.UserId, r.ProductId })
+.IsUnique();
         }
     }
 }

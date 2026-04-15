@@ -1,3 +1,5 @@
+using ApiProject.Dtos.Category;
+using ApiProject.Dtos.Product;
 using ApiProject.Models;
 using ApiProject.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +22,14 @@ namespace ApiProject.Controllers
         public async Task<IActionResult> GetAll()
         {
             var categories = await _categoryRepo.GetAllAsync();
-            return Ok(categories);
+
+            var result = categories.Select(c => new GetCategory
+            {
+                Id = c.Id,
+                Name = c.Name
+            });
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -28,23 +37,76 @@ namespace ApiProject.Controllers
         {
             var category = await _categoryRepo.GetByIdAsync(id);
             if (category == null) return NotFound();
-            return Ok(category);
-        }
 
+            var result = new CreateCategory
+            { 
+                Name = category.Name
+            };
+
+            return Ok(result);
+        }
+        [HttpGet("{id}/products")]
+        public async Task<IActionResult> GetCategoryProducts(int id)
+        {
+            var category = await _categoryRepo.GetCategoryWithProductsAsync(id);
+
+            if (category == null) return NotFound();
+
+            var result = new GetCategoryWithProducts
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Products = category.Products.Select(p => new GetProducts
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    Image = p.Image,
+                    Stock = p.Stock , 
+                    CategoryId = p.CategoryId,
+                }).ToList()
+            };
+
+            return Ok(result);
+        }
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Only admins can add categories
-        public async Task<IActionResult> Create([FromBody] Category category)
+      //  [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create([FromBody] CreateCategory dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var category = new Category
+            {
+                Name = dto.Name,
+                ImageUrl = "default.jpg" 
+            };
 
             await _categoryRepo.AddAsync(category);
             await _categoryRepo.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+            return Ok(category);
         }
 
+        [HttpPut("{id}")]
+       // [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(int id, CreateCategory dto)
+        {
+            var category = await _categoryRepo.GetByIdAsync(id);
+            if (category == null) return NotFound();
+
+            category.Name = dto.Name;
+
+            _categoryRepo.Update(category);
+            await _categoryRepo.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
+
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+       // [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var category = await _categoryRepo.GetByIdAsync(id);

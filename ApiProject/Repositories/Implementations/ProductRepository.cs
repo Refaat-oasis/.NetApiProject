@@ -2,6 +2,7 @@ using ApiProject.Data;
 using ApiProject.Models;
 using ApiProject.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace ApiProject.Repositories.Implementations
 {
@@ -19,7 +20,17 @@ namespace ApiProject.Repositories.Implementations
                 .Include(p => p.Category)
                 .ToListAsync();
         }
+        public async Task<IEnumerable<Product>> GetAllAsync(Expression<Func<Product, bool>> filter = null)
+        {
+            IQueryable<Product> query = _context.Set<Product>();
 
+            if (filter != null)
+                query = query.Where(filter);
+
+            return await query.ToListAsync();
+        }
+
+      
         public async Task SoftDeleteAsync(int id)
         {
             var product = await GetByIdAsync(id);

@@ -55,14 +55,7 @@ namespace ApiProject.Controllers
                     await _userManager.DeleteAsync(user);
                     return BadRequest(roleAddResult.Errors);
                 }
-                var token = await _tokenService.CreateToken(user);
 
-                return Ok(new
-                {
-                    Token = token,
-                    Email = user.Email,
-                    FullName = user.FullName
-                });
             }
 
             return BadRequest(result.Errors);
@@ -75,21 +68,20 @@ namespace ApiProject.Controllers
 
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
 
-            if (user == null || user.IsDeleted) return Unauthorized("Invalid Email or Password");
+            if (user == null || user.IsDeleted) return Unauthorized(new { message = "EmailNotFound" });
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
-            if (!result.Succeeded) return Unauthorized("Invalid Email or Password");
+            if (!result.Succeeded) return Unauthorized(new { message = "InvalidPassword" });
 
             return Ok(new
             {
-                Token = _tokenService.CreateToken(user),
+                Token = _tokenService.CreateToken(user, loginDto.RememberMe),
                 Email = user.Email,
-                FullName = user.FullName
+                FullName = user.FullName,
+                RememberMe = loginDto.RememberMe
             });
         }
-
-
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordDto model)
         {
@@ -153,6 +145,8 @@ namespace ApiProject.Controllers
         public string Address { get; set; } = string.Empty;
         public string? Role { get; set; } = "Customer";
 
+
+
     }
 
     public class LoginDto
@@ -161,5 +155,6 @@ namespace ApiProject.Controllers
         public string Email { get; set; } = string.Empty;
         [Required]
         public string Password { get; set; } = string.Empty;
+        public bool RememberMe { get; set; } = false;
     }
 }

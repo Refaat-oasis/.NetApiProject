@@ -32,5 +32,10 @@ namespace ApiProject.Models
         public Category? Category { get; set; }
         public string Image { get; set; }
         public ICollection<Review>? Reviews { get; set; }
+
+        //aya
+        public string SellerId { get; set; }
+        [ForeignKey("SellerId")]
+        public ApplicationUser Seller { get; set; }
     }
 }
