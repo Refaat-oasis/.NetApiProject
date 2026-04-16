@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
+using Stripe;
 
 namespace ApiProject
 {
@@ -90,8 +91,10 @@ namespace ApiProject
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<ICartRepository, CartRepository>();
             builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+            builder.Services.AddScoped<IStripePaymentRepository, StripePaymentRepository>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddTransient<EmailService>();
+            builder.Services.Configure<StripeSetting>(builder.Configuration.GetSection("Stripe"));
             var app = builder.Build();
 
         using (var scope = app.Services.CreateScope())
@@ -127,6 +130,9 @@ namespace ApiProject
                 }
             }
         }
+
+        StripeConfiguration.SetApiKey(builder.Configuration["Stripe:SecretKey"]); 
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
