@@ -45,23 +45,21 @@ namespace ApiProject.Controllers
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
 
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                var identityRole = requestedClientRole == "Seller" ? "Seller" : "User";
-
-                var roleAddResult = await _userManager.AddToRoleAsync(user, identityRole);
-                if (!roleAddResult.Succeeded)
-                {
-                    await _userManager.DeleteAsync(user);
-                    return BadRequest(roleAddResult.Errors);
-                }
-
+                return BadRequest(result.Errors);
             }
 
-           return Ok(new
- {
-     message = "User registered successfully"
- });
+            var identityRole = requestedClientRole == "Seller" ? "Seller" : "User";
+            var roleAddResult = await _userManager.AddToRoleAsync(user, identityRole);
+            
+            if (!roleAddResult.Succeeded)
+            {
+                await _userManager.DeleteAsync(user);
+                return BadRequest(roleAddResult.Errors);
+            }
+
+            return Ok(new { message = "User registered successfully" });
         }
 
         [HttpPost("login")]

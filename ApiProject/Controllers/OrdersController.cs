@@ -44,15 +44,10 @@ namespace ApiProject.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
 
-            var order = await _orderRepo.GetByIdAsync(id);
+            var order = await _orderRepo.GetOrderByIdAsync(id);
             if (order == null || order.UserId != userId) return NotFound();
 
-            // Load order items with product details
-            var orders = await _orderRepo.GetOrdersByUserIdAsync(userId);
-            var fullOrder = orders.FirstOrDefault(o => o.Id == id);
-            if (fullOrder == null) return NotFound();
-
-            return Ok(MapToOrderResponse(fullOrder));
+            return Ok(MapToOrderResponse(order));
         }
 
         [HttpPost("checkout")]
@@ -185,8 +180,7 @@ namespace ApiProject.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetOrderAdmin(int id)
         {
-            var orders = await _orderRepo.GetAllOrdersAsync();
-            var order = orders.FirstOrDefault(o => o.Id == id);
+            var order = await _orderRepo.GetOrderByIdAsync(id);
             if (order == null) return NotFound();
 
             return Ok(MapToOrderResponse(order));

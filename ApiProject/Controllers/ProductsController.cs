@@ -125,6 +125,7 @@ namespace ApiProject.Controllers
         public async Task<IActionResult> Create([FromForm] CreateProduct dto)
         {
             var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             string imagePath = "";

@@ -27,5 +27,13 @@ namespace ApiProject.Repositories.Implementations
                 .ThenInclude(oi => oi.Product)
                 .ToListAsync();
         }
+
+        public async Task<Order?> GetOrderByIdAsync(int id)
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
+        }
     }
 }
