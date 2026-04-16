@@ -6,5 +6,6 @@ namespace ApiProject.Repositories.Interfaces
     {
         // Add specific methods for Order if needed, like GetOrdersByUserId
         Task<IEnumerable<Order>> GetOrdersByUserIdAsync(string userId);
+        Task<IEnumerable<Order>> GetAllOrdersAsync();
     }
 }

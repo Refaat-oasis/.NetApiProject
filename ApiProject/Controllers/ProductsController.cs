@@ -38,6 +38,27 @@ namespace ApiProject.Controllers
             return Ok(productDtos);
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllAdmin()
+        {
+            var products = await _productRepo.GetAllAsync(); // Fetches tracking IsDeleted from GenericRepository
+
+            var productDtos = products.Select(p => new GetProducts
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                Stock = p.Stock,
+                CategoryId = p.CategoryId,
+                Image = p.Image,
+                // Soft deletion state can be tracked or accessed if mapped in DTO, but we just return matching format for now
+            }).ToList();
+            return Ok(productDtos);
+        }
+
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -57,8 +78,7 @@ namespace ApiProject.Controllers
             return Ok(productDto);
         }
 
-        [HttpPost]
-
+        [Authorize(Roles = "Admin,Seller")]
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] CreateProduct dto)
         {
@@ -104,6 +124,7 @@ namespace ApiProject.Controllers
         }
 
 
+        [Authorize(Roles = "Admin,Seller")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromForm] UpdateProduct dto)
         {
@@ -148,6 +169,7 @@ namespace ApiProject.Controllers
         }
 
 
+        [Authorize(Roles = "Admin,Seller")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

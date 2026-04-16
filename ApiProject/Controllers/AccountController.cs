@@ -80,12 +80,14 @@ namespace ApiProject.Controllers
             var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
             if (!result.Succeeded) return Unauthorized("Invalid Email or Password");
-
+            var roles = await _userManager.GetRolesAsync(user);
             return Ok(new
             {
                 Token = _tokenService.CreateToken(user),
                 Email = user.Email,
-                FullName = user.FullName
+                FullName = user.FullName,
+                Role = roles
+                
             });
         }
 

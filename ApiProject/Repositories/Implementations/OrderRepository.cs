@@ -19,5 +19,13 @@ namespace ApiProject.Repositories.Implementations
                 .ThenInclude(oi => oi.Product)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Order>> GetAllOrdersAsync()
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .ToListAsync();
+        }
     }
 }

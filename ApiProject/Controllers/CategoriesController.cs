@@ -43,6 +43,24 @@ namespace ApiProject.Controllers
             return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
         }
 
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(int id, [FromBody] Category dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var existingCategory = await _categoryRepo.GetByIdAsync(id);
+            if (existingCategory == null) return NotFound();
+
+            existingCategory.Name = dto.Name;
+            existingCategory.ImageUrl = dto.ImageUrl;
+
+            _categoryRepo.Update(existingCategory);
+            await _categoryRepo.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)

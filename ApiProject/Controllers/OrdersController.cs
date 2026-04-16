@@ -172,6 +172,43 @@ namespace ApiProject.Controllers
             });
         }
 
+        [HttpGet("admin/all")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllAdmin()
+        {
+            var orders = await _orderRepo.GetAllOrdersAsync();
+            var response = orders.Select(o => MapToOrderResponse(o));
+            return Ok(response);
+        }
+
+        [HttpGet("admin/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetOrderAdmin(int id)
+        {
+            var orders = await _orderRepo.GetAllOrdersAsync();
+            var order = orders.FirstOrDefault(o => o.Id == id);
+            if (order == null) return NotFound();
+
+            return Ok(MapToOrderResponse(order));
+        }
+
+        [HttpPut("admin/{id}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var order = await _orderRepo.GetByIdAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = dto.Status;
+            _orderRepo.Update(order);
+            await _orderRepo.SaveChangesAsync();
+
+            return Ok(new { message = "Order status updated successfully", status = order.Status });
+        }
+
+
         private static OrderResponseDto MapToOrderResponse(Order o)
         {
             return new OrderResponseDto

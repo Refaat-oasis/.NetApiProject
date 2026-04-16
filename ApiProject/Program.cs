@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
+
 namespace ApiProject
 {
     public class Program
@@ -65,7 +67,8 @@ namespace ApiProject
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"] ?? "")
-                    )
+                    ),
+                    RoleClaimType = ClaimTypes.Role
                 };
             });
             builder.Services.AddCors(options =>
@@ -90,18 +93,39 @@ namespace ApiProject
             builder.Services.AddTransient<EmailService>();
             var app = builder.Build();
 
-            using (var scope = app.Services.CreateScope())
+        using (var scope = app.Services.CreateScope())
+        {
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            
+            var roles = new[] { "Admin", "User", "Seller" };
+            foreach (var role in roles)
             {
-                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-                var roles = new[] { "Admin", "User", "Seller" };
-                foreach (var role in roles)
+                if (!roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
                 {
-                    if (!roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
-                    {
-                        roleManager.CreateAsync(new IdentityRole(role)).GetAwaiter().GetResult();
-                    }
+                    roleManager.CreateAsync(new IdentityRole(role)).GetAwaiter().GetResult();
                 }
             }
+
+            // Seed Admin User
+            var adminEmail = "admin@test.com";
+            var adminUser = userManager.FindByEmailAsync(adminEmail).GetAwaiter().GetResult();
+            if (adminUser == null)
+            {
+                adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    FullName = "System Admin",
+                    Address = "Admin Office"
+                };
+                var createResult = userManager.CreateAsync(adminUser, "Admin@123").GetAwaiter().GetResult();
+                if (createResult.Succeeded)
+                {
+                    userManager.AddToRoleAsync(adminUser, "Admin").GetAwaiter().GetResult();
+                }
+            }
+        }
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

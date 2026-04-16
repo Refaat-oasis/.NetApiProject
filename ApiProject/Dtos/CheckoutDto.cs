@@ -38,4 +38,10 @@ namespace ApiProject.DTOs
         public decimal Price { get; set; }
         public decimal Subtotal { get; set; }
     }
+
+    public class UpdateOrderStatusDto
+    {
+        [Required]
+        public string Status { get; set; } = string.Empty;
+    }
 }
