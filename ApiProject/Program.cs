@@ -73,13 +73,14 @@ namespace ApiProject
             });
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("mycors",
-                    builder =>
-                    {
-                        builder.AllowAnyOrigin()
-                               .AllowAnyMethod()
-                               .AllowAnyHeader();
-                    });
+                options.AddPolicy("mycors", policy =>
+                {
+                    policy
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
             });
             // 4. Register Repositories and Services (Dependency Injection)
             // Dependency Injection (DI) is like a waiter that brings you what you need without you having to go to the kitchen yourself.
@@ -136,9 +137,10 @@ namespace ApiProject
             app.UseCors("AllowAngular");
 
             // Authentication must come before Authorization!
+            app.UseCors("mycors");
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseCors("mycors");
+         
             app.UseStaticFiles();
             app.MapControllers();
 

@@ -4,6 +4,6 @@ namespace ApiProject.Repositories.Interfaces
 {
     public interface ICategoryRepository : IRepository<Category>
     {
-        // Add specific methods for Category if needed
+        Task<Category> GetCategoryWithProductsAsync(int id);
     }
 }
