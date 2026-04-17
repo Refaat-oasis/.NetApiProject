@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ApiProject.Dtos.Product
 {
@@ -19,7 +19,7 @@ namespace ApiProject.Dtos.Product
         [Range(0, 10000)]
         public int Stock { get; set; }
 
-        public IFormFile Image { get; set; }
+        public IFormFile? Image { get; set; }
         [Required]
         public int CategoryId { get; set; }
 
