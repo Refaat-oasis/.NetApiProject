@@ -89,13 +89,23 @@ Updates an existing category. If a new image is provided, the old one is automat
 
 ---
 
-## 5. Delete Category
-Deletes the category and removes its associated image file from the server (unless it's the `default.jpg`).
+## 5. Delete Category (Safe Move)
+Deletes the category. If products exist inside, they are automatically moved to a special **"Others"** category. If the "Others" category doesn't exist, the system creates it automatically.
 
 *   **Type:** `DELETE`
 *   **Endpoint:** `/{id}`
 *   **Auth Requirement:** `Admin` role required.
-*   **Response Body (204 No Content):** No body returned on success.
+*   **Response Body (204 No Content)**
+
+---
+
+## 6. Force Delete Category & Products
+Deletes the category AND soft-deletes all products belonging to it.
+
+*   **Type:** `DELETE`
+*   **Endpoint:** `/{id}/with-products`
+*   **Auth Requirement:** `Admin` role required.
+*   **Response Body (204 No Content)**
 
 ---
 

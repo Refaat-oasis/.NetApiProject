@@ -12,11 +12,13 @@ namespace ApiProject.Controllers
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryRepository _categoryRepo;
+        private readonly IProductRepository _productRepo;
         private readonly IWebHostEnvironment _env;
 
-        public CategoriesController(ICategoryRepository categoryRepo, IWebHostEnvironment env)
+        public CategoriesController(ICategoryRepository categoryRepo, IProductRepository productRepo, IWebHostEnvironment env)
         {
             _categoryRepo = categoryRepo;
+            _productRepo = productRepo;
             _env = env;
         }
 
@@ -135,12 +137,88 @@ namespace ApiProject.Controllers
             var category = await _categoryRepo.GetByIdAsync(id);
             if (category == null) return NotFound();
 
-            DeleteImage(category.ImageUrl);
+            // 1. Get or create the "Others" category
+            var othersCategory = await GetOrCreateOthersCategory();
 
+            // 2. If trying to delete the "Others" category itself, refuse if it has products
+            if (id == othersCategory.Id)
+            {
+                var productsInOthers = await _productRepo.FindAsync(p => p.CategoryId == id && !p.IsDeleted);
+                if (productsInOthers.Any())
+                {
+                    return BadRequest(new { Message = "Cannot delete the 'Others' category while it contains products." });
+                }
+            }
+            else
+            {
+                // 3. Move all products in the current category to "Others"
+                var productsInCategory = await _productRepo.FindAsync(p => p.CategoryId == id && !p.IsDeleted);
+                foreach (var product in productsInCategory)
+                {
+                    product.CategoryId = othersCategory.Id;
+                    _productRepo.Update(product);
+                }
+                await _productRepo.SaveChangesAsync();
+            }
+
+            // 4. Delete the category
+            DeleteImage(category.ImageUrl);
             _categoryRepo.Delete(category);
             await _categoryRepo.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpDelete("{id}/with-products")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteWithProducts(int id)
+        {
+            var category = await _categoryRepo.GetByIdAsync(id);
+            if (category == null) return NotFound();
+
+            // 1. Get or create the "Others" category (since we'll move products there)
+            var othersCategory = await GetOrCreateOthersCategory();
+
+            // 2. Locate all relevant products
+            var productsInCategory = await _productRepo.FindAsync(p => p.CategoryId == id);
+            
+            foreach (var product in productsInCategory)
+            {
+                // 3. Mark as inactive AND move to Others for future reactivation safety
+                product.IsDeleted = true;
+                if (id != othersCategory.Id)
+                {
+                    product.CategoryId = othersCategory.Id;
+                }
+                _productRepo.Update(product);
+            }
+            await _productRepo.SaveChangesAsync();
+
+            // 4. Delete the category
+            DeleteImage(category.ImageUrl);
+            _categoryRepo.Delete(category);
+            await _categoryRepo.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private async Task<Category> GetOrCreateOthersCategory()
+        {
+            var categories = await _categoryRepo.GetAllAsync();
+            var others = categories.FirstOrDefault(c => c.Name.Equals("Others", StringComparison.OrdinalIgnoreCase));
+
+            if (others == null)
+            {
+                others = new Category
+                {
+                    Name = "Others",
+                    ImageUrl = "images/categories/default.jpg"
+                };
+                await _categoryRepo.AddAsync(others);
+                await _categoryRepo.SaveChangesAsync();
+            }
+
+            return others;
         }
 
         private async Task<string> SaveImage(IFormFile image)

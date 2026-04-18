@@ -231,17 +231,6 @@ namespace ApiProject.Controllers
             if (!isAdmin && product.SellerId != userId)
                 return Forbid();
 
-            if (!string.IsNullOrEmpty(product.Image))
-            {
-                var fileName = Path.GetFileName(product.Image);
-                var filePath = Path.Combine(_env.WebRootPath, "images/products", fileName);
-
-                if (System.IO.File.Exists(filePath))
-                {
-                    System.IO.File.Delete(filePath);
-                }
-            }
-
             await _productRepo.SoftDeleteAsync(id);
 
             return NoContent();

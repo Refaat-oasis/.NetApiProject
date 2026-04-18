@@ -81,7 +81,7 @@ Restores a soft-deleted product so it's visible to customers again.
 ---
 
 ## 4. Delete Product (Soft Delete)
-Removes the product from public view and deletes the image file from the server.
+Removes the product from public view. **Note:** The actual image file is PRESERVED on the server to allow for easy restoration if the product is reactivated later.
 
 *   **Type:** `DELETE`
 *   **Endpoint:** `/{id}`
