@@ -33,7 +33,7 @@ namespace ApiProject.Controllers
                 Id = ci.Id,
                 ProductId = ci.ProductId,
                 ProductName = ci.Product?.Name ?? "",
-                ProductImage = ci.Product?.ImageUrl ?? "",
+                ProductImage = ci.Product?.Image ?? "",
                 ProductPrice = ci.Product?.Price ?? 0,
                 Quantity = ci.Quantity,
                 Subtotal = ci.Quantity * (ci.Product?.Price ?? 0)
@@ -61,12 +61,19 @@ namespace ApiProject.Controllers
 
             if (existingItem != null)
             {
+                var newQuantity = existingItem.Quantity + dto.Quantity;
+                if (newQuantity > product.Stock)
+                    return BadRequest(new { message = $"Not enough stock. Only {product.Stock} available." });
+
                 // Update quantity instead of adding duplicate
-                existingItem.Quantity += dto.Quantity;
+                existingItem.Quantity = newQuantity;
                 _cartRepo.Update(existingItem);
             }
             else
             {
+                if (dto.Quantity > product.Stock)
+                    return BadRequest(new { message = $"Not enough stock. Only {product.Stock} available." });
+
                 var cartItem = new CartItem
                 {
                     ProductId = dto.ProductId,
@@ -92,6 +99,10 @@ namespace ApiProject.Controllers
 
             var item = await _cartRepo.GetByIdAsync(id);
             if (item == null || item.UserId != userId) return NotFound();
+
+            var product = await _productRepo.GetByIdAsync(item.ProductId);
+            if (product != null && dto.Quantity > product.Stock)
+                return BadRequest(new { message = $"Not enough stock. Only {product.Stock} available." });
 
             item.Quantity = dto.Quantity;
             _cartRepo.Update(item);

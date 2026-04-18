@@ -108,7 +108,7 @@ namespace ApiProject.Controllers
             var order = new Order
             {
                 UserId = userId!,
-                OrderDate = DateTime.Now,
+                OrderDate = DateTime.UtcNow,
                 Status = "Processing",
                 PaymentMethod = dto.PaymentMethod,
                 ShippingAddress = dto.ShippingAddress,
