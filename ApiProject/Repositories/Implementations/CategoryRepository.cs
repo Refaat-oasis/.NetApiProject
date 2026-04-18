@@ -14,7 +14,7 @@ namespace ApiProject.Repositories.Implementations
         public async Task<Category?> GetCategoryWithProductsAsync(int id)
         {
             return await _context.Categories
-                .Include(c => c.Products.Where(p => !p.IsDeleted))
+                .Include(c => c.Products!.Where(p => !p.IsDeleted))
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
     }

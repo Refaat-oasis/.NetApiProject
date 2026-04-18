@@ -42,13 +42,15 @@ namespace ApiProject.Services
             };
             //basant
             var expiry = rememberMe
-? DateTime.UtcNow.AddDays(7)
-: DateTime.UtcNow.AddHours(2);
+                ? DateTime.UtcNow.AddDays(7)
+                : DateTime.UtcNow.AddHours(2);
+
             var roles = await _userManager.GetRolesAsync(user);
             foreach (var role in roles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim("role", role));
             }
+
             // Credentials for signing the token
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
 
@@ -56,7 +58,7 @@ namespace ApiProject.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddMinutes(double.Parse(_config["JWT:DurationInMinutes"] ?? "60")),
+                Expires = expiry,
                 SigningCredentials = creds,
                 Issuer = _config["JWT:Issuer"],
                 Audience = _config["JWT:Audience"]

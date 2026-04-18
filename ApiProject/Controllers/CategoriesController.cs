@@ -71,7 +71,7 @@ namespace ApiProject.Controllers
             return Ok(result);
         }
         [HttpPost]
-      //  [Authorize(Roles = "Admin")]
+       [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateCategory dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -110,7 +110,7 @@ namespace ApiProject.Controllers
         }
 
         [HttpDelete("{id}")]
-       // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var category = await _categoryRepo.GetByIdAsync(id);

@@ -246,5 +246,26 @@ namespace ApiProject.Controllers
 
             return NoContent();
         }
+
+        [Authorize(Roles = "Admin,Seller")]
+        [HttpPut("{id}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            var userId = GetUserId();
+            bool isAdmin = User.IsInRole("Admin");
+
+            var product = await _productRepo.GetByIdAsync(id);
+
+            if (product == null) return NotFound();
+
+            if (!isAdmin && product.SellerId != userId)
+                return Forbid();
+
+            product.IsDeleted = false;
+            _productRepo.Update(product);
+            await _productRepo.SaveChangesAsync();
+
+            return Ok(new { Message = "Product reactivated successfully.", Product = product });
+        }
     }
 }

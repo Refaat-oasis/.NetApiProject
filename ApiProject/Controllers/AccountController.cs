@@ -3,6 +3,7 @@ using ApiProject.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using ApiProject.Dtos.Account;
 
 namespace ApiProject.Controllers
 {
@@ -78,7 +79,7 @@ namespace ApiProject.Controllers
 
             return Ok(new
             {
-                Token = _tokenService.CreateToken(user, loginDto.RememberMe),
+                Token = await _tokenService.CreateToken(user, loginDto.RememberMe),
                 Email = user.Email,
                 FullName = user.FullName,
                 Role = roles,
@@ -119,45 +120,5 @@ namespace ApiProject.Controllers
 
             return Ok();
         }
-    }
-
-    // DTOs (Data Transfer Objects) are simple classes used to pass data between the client and the server.
-    public class ForgotPasswordDto
-    {
-        public string Email { get; set; }
-    }
-    public class ResetPasswordDto
-    {
-        public string Email { get; set; }
-
-        public string Token { get; set; }
-
-        public string NewPassword { get; set; }
-
-        public string ConfirmPassword { get; set; }
-    }
-    public class RegisterDto
-    {
-        [Required]
-        public string FullName { get; set; } = string.Empty;
-        [Required]
-        public string Email { get; set; } = string.Empty;
-        [Required]
-        public string Password { get; set; } = string.Empty;
-        [Required]
-        public string Address { get; set; } = string.Empty;
-        public string? Role { get; set; } = "Customer";
-
-
-
-    }
-
-    public class LoginDto
-    {
-        [Required]
-        public string Email { get; set; } = string.Empty;
-        [Required]
-        public string Password { get; set; } = string.Empty;
-        public bool RememberMe { get; set; } = false;
     }
 }
