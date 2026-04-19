@@ -20,37 +20,31 @@ namespace ApiProject.Controllers
         {
             if (dto.PaymentMethod == "CashOnDelivery")
             {
-                // Skip Stripe processing.
-                // Create the order normally (Logic for order creation would go here, e.g., saving to DB)
-                // Redirect to OrderConfirmed
-                return RedirectToAction(nameof(OrderConfirmed));
+                // Logic for order creation would normally be handled before this, 
+                // but if it reaches here for COD, we just confirm it's fine.
+                return Ok(new { success = true, message = "Order successfully placed with Cash on Delivery." });
             }
             else if (dto.PaymentMethod == "CreditCard")
             {
-                // Send the DTO to the payment repository/service.
                 var result = _paymentRepository.ProcessStripePayment(dto);
 
                 if (result)
                 {
-                    // If payment succeeds
-                    return RedirectToAction(nameof(OrderConfirmed));
+                    return Ok(new { success = true, message = "Payment processed successfully." });
                 }
                 else
                 {
-                    // If payment fails
-                    // In a Web API, we typically return an error status or object
-                    return BadRequest(new { message = "Payment failed. Please check your card details and try again." });
+                    return BadRequest(new { success = false, message = "Payment failed. Please check your card details and try again." });
                 }
             }
 
-            return BadRequest(new { message = "Invalid payment method." });
+            return BadRequest(new { success = false, message = "Invalid payment method." });
         }
 
         [HttpGet("OrderConfirmed")]
         public IActionResult OrderConfirmed()
         {
-            // This action returns a confirmation view/message informing the user that the order was successfully placed.
-            return Ok(new { message = "Order successfully placed and confirmed." });
+            return Ok(new { success = true, message = "Order successfully placed and confirmed." });
         }
     }
 }
