@@ -1,9 +1,11 @@
 using ApiProject.Models;
 using ApiProject.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using ApiProject.Dtos.Account;
+using System.Security.Claims;
 
 namespace ApiProject.Controllers
 {
@@ -119,6 +121,76 @@ namespace ApiProject.Controllers
                 return BadRequest(result.Errors);
 
             return Ok();
+        }
+
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var user = await GetCurrentUserAsync();
+            if (user == null) return Unauthorized();
+
+            return Ok(new AccountProfileDto
+            {
+                FullName = user.FullName,
+                Email = user.Email ?? string.Empty,
+                Address = user.Address
+            });
+        }
+
+        [Authorize]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateAccountProfileDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await GetCurrentUserAsync();
+            if (user == null) return Unauthorized();
+
+            user.FullName = dto.FullName.Trim();
+            user.Address = dto.Address.Trim();
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new AccountProfileDto
+            {
+                FullName = user.FullName,
+                Email = user.Email ?? string.Empty,
+                Address = user.Address
+            });
+        }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await GetCurrentUserAsync();
+            if (user == null) return Unauthorized();
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { message = "Password updated successfully" });
+        }
+
+        private async Task<ApplicationUser?> GetCurrentUserAsync()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return null;
+            }
+
+            return await _userManager.FindByIdAsync(userId);
         }
     }
 }
